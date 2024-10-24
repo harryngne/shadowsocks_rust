@@ -3,10 +3,10 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 export PATH
 
 #=================================================
-#	Yêu cầu hệ thống: CentOS/Debian/Ubuntu
-#	Mô tả: Script quản lý Shadowsocks Rust
-#	Tác giả: 翠花
-#	Trang web: https://about.nange.cn
+#	System Required: CentOS/Debian/Ubuntu
+#	Description: Shadowsocks Rust 管理脚本
+#	Author: 翠花
+#	WebSite: https://about.nange.cn
 #=================================================
 
 sh_ver="1.4.4"
@@ -19,12 +19,12 @@ Now_ver_File="/etc/ss-rust/ver.txt"
 Local="/etc/sysctl.d/local.conf"
 
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m" && Yellow_font_prefix="\033[0;33m"
-Info="${Green_font_prefix}[Thông tin]${Font_color_suffix}"
-Error="${Red_font_prefix}[Lỗi]${Font_color_suffix}"
-Tip="${Yellow_font_prefix}[Chú ý]${Font_color_suffix}"
+Info="${Green_font_prefix}[信息]${Font_color_suffix}"
+Error="${Red_font_prefix}[错误]${Font_color_suffix}"
+Tip="${Yellow_font_prefix}[注意]${Font_color_suffix}"
 
 check_root(){
-	[[ $EUID != 0 ]] && echo -e "${Error} Hiện tại không phải là tài khoản ROOT (hoặc không có quyền ROOT), không thể tiếp tục thao tác, vui lòng chuyển sang tài khoản ROOT hoặc sử dụng lệnh ${Green_background_prefix}sudo su${Font_color_suffix} để nhận quyền ROOT tạm thời (sau khi thực hiện có thể sẽ yêu cầu nhập mật khẩu tài khoản hiện tại)." && exit 1
+	[[ $EUID != 0 ]] && echo -e "${Error} 当前非ROOT账号(或没有ROOT权限)，无法继续操作，请更换ROOT账号或使用 ${Green_background_prefix}sudo su${Font_color_suffix} 命令获取临时ROOT权限（执行后可能会提示输入当前账号的密码）。" && exit 1
 }
 
 check_sys(){
@@ -58,7 +58,7 @@ sysArch() {
     fi    
 }
 
-#Kích hoạt TCP Fast Open của hệ thống
+#开启系统 TCP Fast Open
 enable_systfo() {
 	kernel=$(uname -r | awk -F . '{print $1}')
 	if [ "$kernel" -ge 3 ]; then
@@ -86,12 +86,12 @@ net.ipv4.tcp_ecn=1
 net.core.default_qdisc=fq
 net.ipv4.tcp_congestion_control = bbr" >>/etc/sysctl.d/local.conf && sysctl --system >/dev/null 2>&1
 	else
-		echo -e "$ErrorPhiên bản kernel của hệ thống quá thấp, không hỗ trợ TCP Fast Open!"
+		echo -e "$Error系统内核版本过低，无法支持 TCP Fast Open ！"
 	fi
 }
 
 check_installed_status(){
-	[[ ! -e ${FILE} ]] && echo -e "${Error} Shadowsocks Rust chưa được cài đặt, vui lòng kiểm tra!" && exit 1
+	[[ ! -e ${FILE} ]] && echo -e "${Error} Shadowsocks Rust 没有安装，请检查！" && exit 1
 }
 
 check_status(){
@@ -100,15 +100,15 @@ check_status(){
 
 check_new_ver(){
 	new_ver=$(wget -qO- https://api.github.com/repos/shadowsocks/shadowsocks-rust/releases| jq -r '[.[] | select(.prerelease == false) | select(.draft == false) | .tag_name] | .[0]')
-	[[ -z ${new_ver} ]] && echo -e "${Error} Không lấy được phiên bản mới nhất của Shadowsocks Rust!" && exit 1
-	echo -e "${Info} Phát hiện phiên bản mới nhất của Shadowsocks Rust là [ ${new_ver} ]"
+	[[ -z ${new_ver} ]] && echo -e "${Error} Shadowsocks Rust 最新版本获取失败！" && exit 1
+	echo -e "${Info} 检测到 Shadowsocks Rust 最新版本为 [ ${new_ver} ]"
 }
 
 check_ver_comparison(){
 	now_ver=$(cat ${Now_ver_File})
 	if [[ "${now_ver}" != "${new_ver}" ]]; then
-		echo -e "${Info} Đã phát hiện phiên bản mới của Shadowsocks Rust [ ${new_ver} ], phiên bản cũ [ ${now_ver} ]"
-		read -e -p "Có muốn cập nhật không? [Y/n]：" yn
+		echo -e "${Info} 发现 Shadowsocks Rust 已有新版本 [ ${new_ver} ]，旧版本 [ ${now_ver} ]"
+		read -e -p "是否更新 ？ [Y/n]：" yn
 		[[ -z "${yn}" ]] && yn="y"
 		if [[ $yn == [Yy] ]]; then
 			check_status
@@ -120,22 +120,42 @@ check_ver_comparison(){
 			Restart
 		fi
 	else
-		echo -e "${Info} Shadowsocks Rust hiện đã là phiên bản mới nhất [ ${new_ver} ]!" && exit 1
+		echo -e "${Info} 当前 Shadowsocks Rust 已是最新版本 [ ${new_ver} ] ！" && exit 1
 	fi
 }
 
+# Download(){
+# 	if [[ ! -e "${FOLDER}" ]]; then
+# 		mkdir "${FOLDER}"
+# 	# else
+# 		# [[ -e "${FILE}" ]] && rm -rf "${FILE}"
+# 	fi
+# 	echo -e "${Info} 开始下载 Shadowsocks Rust ……"
+# 	wget --no-check-certificate -N "https://github.com/shadowsocks/shadowsocks-rust/releases/download/${new_ver}/shadowsocks-${new_ver}.${arch}-unknown-linux-gnu.tar.xz"
+# 	[[ ! -e "shadowsocks-${new_ver}.${arch}-unknown-linux-gnu.tar.xz" ]] && echo -e "${Error} Shadowsocks Rust 下载失败！" && exit 1
+# 	tar -xvf "shadowsocks-${new_ver}.${arch}-unknown-linux-gnu.tar.xz"
+# 	[[ ! -e "ssserver" ]] && echo -e "${Error} Shadowsocks Rust 压缩包解压失败！" && exit 1
+# 	rm -rf "shadowsocks-${new_ver}.${arch}-unknown-linux-gnu.tar.xz"
+# 	chmod +x ssserver
+# 	mv -f ssserver "${FILE}"
+# 	rm sslocal ssmanager ssservice ssurl
+# 	echo "${new_ver}" > ${Now_ver_File}
+#     echo -e "${Info} Shadowsocks Rust 主程序下载安装完毕！"
+# }
+
+# 官方源
 stable_Download() {
-	echo -e "${Info} Bắt đầu tải về Shadowsocks Rust từ nguồn chính thức ……"
+	echo -e "${Info} 默认开始下载官方源 Shadowsocks Rust ……"
 	wget --no-check-certificate -N "https://github.com/shadowsocks/shadowsocks-rust/releases/download/${new_ver}/shadowsocks-${new_ver}.${arch}-unknown-linux-gnu.tar.xz"
 	if [[ ! -e "shadowsocks-${new_ver}.${arch}-unknown-linux-gnu.tar.xz" ]]; then
-		echo -e "${Error} Tải về Shadowsocks Rust từ nguồn chính thức thất bại!"
+		echo -e "${Error} Shadowsocks Rust 官方源下载失败！"
 		return 1 && exit 1
 	else
 		tar -xvf "shadowsocks-${new_ver}.${arch}-unknown-linux-gnu.tar.xz"
 	fi
 	if [[ ! -e "ssserver" ]]; then
-		echo -e "${Error} Giải nén Shadowsocks Rust thất bại!"
-		echo -e "${Error} Cài đặt Shadowsocks Rust thất bại!"
+		echo -e "${Error} Shadowsocks Rust 解压失败！"
+		echo -e "${Error} Shadowsocks Rust 安装失败 !"
 		return 1 && exit 1
 	else
 		rm -rf "shadowsocks-${new_ver}.${arch}-unknown-linux-gnu.tar.xz"
@@ -144,23 +164,24 @@ stable_Download() {
 	    rm sslocal ssmanager ssservice ssurl
 	    echo "${new_ver}" > ${Now_ver_File}
 
-        echo -e "${Info} Tải và cài đặt Shadowsocks Rust thành công!"
+        echo -e "${Info} Shadowsocks Rust 主程序下载安装完毕！"
 		return 0
 	fi
 }
 
+# 备用源
 backup_Download() {
-	echo -e "${Info} Thử tải Shadowsocks Rust từ nguồn dự phòng (phiên bản cũ) ……"
+	echo -e "${Info} 试图请求 备份源(旧版本) Shadowsocks Rust ……"
 	wget --no-check-certificate -N "https://raw.githubusercontent.com/xOS/Others/master/shadowsocks-rust/v1.14.1/shadowsocks-v1.14.1.${arch}-unknown-linux-gnu.tar.xz"
 	if [[ ! -e "shadowsocks-v1.14.1.${arch}-unknown-linux-gnu.tar.xz" ]]; then
-		echo -e "${Error} Tải từ nguồn dự phòng thất bại!"
+		echo -e "${Error} Shadowsocks Rust 备份源(旧版本) 下载失败！"
 		return 1 && exit 1
 	else
 		tar -xvf "shadowsocks-v1.14.1.${arch}-unknown-linux-gnu.tar.xz"
 	fi
 	if [[ ! -e "ssserver" ]]; then
-		echo -e "${Error} Giải nén từ nguồn dự phòng thất bại!"
-		echo -e "${Error} Cài đặt từ nguồn dự phòng thất bại!"
+		echo -e "${Error} Shadowsocks Rust 备份源(旧版本) 解压失败 !"
+		echo -e "${Error} Shadowsocks Rust 备份源(旧版本) 安装失败 !"
 		return 1 && exit 1
 	else
 		rm -rf "shadowsocks-v1.14.1.${arch}-unknown-linux-gnu.tar.xz"
@@ -168,7 +189,7 @@ backup_Download() {
 	    mv -f ssserver "${FILE}"
 	    rm sslocal ssmanager ssservice ssurl
 		echo "v1.14.1" > ${Now_ver_File}
-		echo -e "${Info} Cài đặt thành công từ nguồn dự phòng!"
+		echo -e "${Info} Shadowsocks Rust 备份源(旧版本) 主程序下载安装完毕！"
 		return 0
 	fi
 }
@@ -203,7 +224,7 @@ ExecStart=/usr/local/bin/ss-rust -c /etc/ss-rust/config.json
 [Install]
 WantedBy=multi-user.target' > /etc/systemd/system/ss-rust.service
 systemctl enable --now ss-rust
-	echo -e "${Info} Dịch vụ Shadowsocks Rust đã được cấu hình xong!"
+	echo -e "${Info} Shadowsocks Rust 服务配置完成！"
 }
 
 Installation_dependency(){
@@ -234,7 +255,7 @@ EOF
 }
 
 Read_config(){
-	[[ ! -e ${CONF} ]] && echo -e "${Error} Không tìm thấy file cấu hình Shadowsocks Rust!" && exit 1
+	[[ ! -e ${CONF} ]] && echo -e "${Error} Shadowsocks Rust 配置文件不存在！" && exit 1
 	port=$(cat ${CONF}|jq -r '.server_port')
 	password=$(cat ${CONF}|jq -r '.password')
 	cipher=$(cat ${CONF}|jq -r '.method')
@@ -244,32 +265,32 @@ Read_config(){
 Set_port(){
 	while true
 		do
-		echo -e "${Tip} Bước này không liên quan đến thao tác mở cổng trên tường lửa hệ thống, vui lòng mở cổng tương ứng theo cách thủ công!"
-		echo -e "Vui lòng nhập cổng Shadowsocks Rust [1-65535]"
-		read -e -p "(Mặc định: 2525)：" port
+		echo -e "${Tip} 本步骤不涉及系统防火墙端口操作，请手动放行相应端口！"
+		echo -e "请输入 Shadowsocks Rust 端口 [1-65535]"
+		read -e -p "(默认：2525)：" port
 		[[ -z "${port}" ]] && port="2525"
 		echo $((${port}+0)) &>/dev/null
 		if [[ $? -eq 0 ]]; then
 			if [[ ${port} -ge 1 ]] && [[ ${port} -le 65535 ]]; then
 				echo && echo "=================================="
-				echo -e "Cổng: ${Red_background_prefix} ${port} ${Font_color_suffix}"
+				echo -e "端口：${Red_background_prefix} ${port} ${Font_color_suffix}"
 				echo "==================================" && echo
 				break
 			else
-				echo "Lỗi nhập, vui lòng nhập cổng hợp lệ."
+				echo "输入错误, 请输入正确的端口。"
 			fi
 		else
-			echo "Lỗi nhập, vui lòng nhập cổng hợp lệ."
+			echo "输入错误, 请输入正确的端口。"
 		fi
 		done
 }
 
 Set_tfo(){
-	echo -e "Bật TCP Fast Open?
+	echo -e "是否开启 TCP Fast Open ？
 ==================================
-${Green_font_prefix} 1.${Font_color_suffix} Bật  ${Green_font_prefix} 2.${Font_color_suffix} Tắt
+${Green_font_prefix} 1.${Font_color_suffix} 开启  ${Green_font_prefix} 2.${Font_color_suffix} 关闭
 =================================="
-	read -e -p "(Mặc định: 1. Bật)：" tfo
+	read -e -p "(默认：1.开启)：" tfo
 	[[ -z "${tfo}" ]] && tfo="1"
 	if [[ ${tfo} == "1" ]]; then
 		tfo=true
@@ -278,7 +299,7 @@ ${Green_font_prefix} 1.${Font_color_suffix} Bật  ${Green_font_prefix} 2.${Font
 		tfo=false
 	fi
 	echo && echo "=================================="
-	echo -e "Trạng thái TCP Fast Open: ${Red_background_prefix} ${tfo} ${Font_color_suffix}"
+	echo -e "TCP Fast Open 开启状态：${Red_background_prefix} ${tfo} ${Font_color_suffix}"
 	echo "==================================" && echo
 }
 
@@ -292,23 +313,23 @@ Set_password(){
 		password_length=16  # Đặt mặc định là 16 cho các loại mã hóa khác
 	fi
 
-	echo "Vui lòng nhập mật khẩu Shadowsocks Rust [0-9][a-z][A-Z]"
-	read -e -p "(Mặc định: Tạo ngẫu nhiên Base64)：" password
+	echo "请输入 Shadowsocks Rust 密码 [0-9][a-z][A-Z]"
+	read -e -p "(默认：随机生成 Base64)：" password
 	[[ -z "${password}" ]] && password=$(openssl rand -base64 ${password_length})
 
 	echo && echo "=================================="
-	echo -e "Mật khẩu: ${Red_background_prefix} ${password} ${Font_color_suffix}"
+	echo -e "密码：${Red_background_prefix} ${password} ${Font_color_suffix}"
 	echo "=================================="
 }
 
 Set_cipher(){
-	echo -e "Chọn phương thức mã hóa cho Shadowsocks Rust
+	echo -e "请选择 Shadowsocks Rust 加密方式
 ==================================	
- ${Green_font_prefix} 1.${Font_color_suffix} aes-128-gcm ${Green_font_prefix}(Mặc định)${Font_color_suffix}
- ${Green_font_prefix} 2.${Font_color_suffix} aes-256-gcm ${Green_font_prefix}(Khuyến nghị)${Font_color_suffix}
+ ${Green_font_prefix} 1.${Font_color_suffix} aes-128-gcm ${Green_font_prefix}(默认)${Font_color_suffix}
+ ${Green_font_prefix} 2.${Font_color_suffix} aes-256-gcm ${Green_font_prefix}(推荐)${Font_color_suffix}
  ${Green_font_prefix} 3.${Font_color_suffix} chacha20-ietf-poly1305 ${Green_font_prefix}${Font_color_suffix}
- ${Green_font_prefix} 4.${Font_color_suffix} plain ${Red_font_prefix}(Không khuyến nghị)${Font_color_suffix}
- ${Green_font_prefix} 5.${Font_color_suffix} none ${Red_font_prefix}(Không khuyến nghị)${Font_color_suffix}
+ ${Green_font_prefix} 4.${Font_color_suffix} plain ${Red_font_prefix}(不推荐)${Font_color_suffix}
+ ${Green_font_prefix} 5.${Font_color_suffix} none ${Red_font_prefix}(不推荐)${Font_color_suffix}
  ${Green_font_prefix} 6.${Font_color_suffix} table
  ${Green_font_prefix} 7.${Font_color_suffix} aes-128-cfb
  ${Green_font_prefix} 8.${Font_color_suffix} aes-256-cfb
@@ -317,15 +338,15 @@ Set_cipher(){
  ${Green_font_prefix}11.${Font_color_suffix} rc4-md5
  ${Green_font_prefix}12.${Font_color_suffix} chacha20-ietf
 ==================================
- ${Tip} Mã hóa AEAD 2022 (yêu cầu phiên bản v1.15.0 trở lên và mật khẩu cần mã hóa Base64)
+ ${Tip} AEAD 2022 加密（须v1.15.0及以上版本且密码须经过Base64加密）
 ==================================	
- ${Green_font_prefix}13.${Font_color_suffix} 2022-blake3-aes-128-gcm ${Green_font_prefix}(Khuyến nghị)${Font_color_suffix}
- ${Green_font_prefix}14.${Font_color_suffix} 2022-blake3-aes-256-gcm ${Green_font_prefix}(Khuyến nghị)${Font_color_suffix}
+ ${Green_font_prefix}13.${Font_color_suffix} 2022-blake3-aes-128-gcm ${Green_font_prefix}(推荐)${Font_color_suffix}
+ ${Green_font_prefix}14.${Font_color_suffix} 2022-blake3-aes-256-gcm ${Green_font_prefix}(推荐)${Font_color_suffix}
  ${Green_font_prefix}15.${Font_color_suffix} 2022-blake3-chacha20-poly1305
  ${Green_font_prefix}16.${Font_color_suffix} 2022-blake3-chacha8-poly1305
  ==================================
- ${Tip} Nếu cần phương thức mã hóa khác, vui lòng tự chỉnh sửa file cấu hình!" && echo
-	read -e -p "(Mặc định: 1. aes-128-gcm)：" cipher
+ ${Tip} 如需其它加密方式请手动修改配置文件 !" && echo
+	read -e -p "(默认: 1. aes-128-gcm)：" cipher
 	[[ -z "${cipher}" ]] && cipher="1"
 	if [[ ${cipher} == "1" ]]; then
 		cipher="aes-128-gcm"
@@ -363,22 +384,22 @@ Set_cipher(){
 		cipher="aes-128-gcm"
 	fi
 	echo && echo "=================================="
-	echo -e "Mã hóa: ${Red_background_prefix} ${cipher} ${Font_color_suffix}"
+	echo -e "加密：${Red_background_prefix} ${cipher} ${Font_color_suffix}"
 	echo "==================================" && echo
 }
 
 Set(){
 	check_installed_status
-	echo && echo -e "Bạn muốn làm gì?
+	echo && echo -e "你要做什么？
 ==================================
- ${Green_font_prefix}1.${Font_color_suffix}  Thay đổi cài đặt cổng
- ${Green_font_prefix}2.${Font_color_suffix}  Thay đổi mật khẩu
- ${Green_font_prefix}3.${Font_color_suffix}  Thay đổi phương thức mã hóa
- ${Green_font_prefix}4.${Font_color_suffix}  Thay đổi cấu hình TFO
+ ${Green_font_prefix}1.${Font_color_suffix}  修改 端口配置
+ ${Green_font_prefix}2.${Font_color_suffix}  修改 密码配置
+ ${Green_font_prefix}3.${Font_color_suffix}  修改 加密配置
+ ${Green_font_prefix}4.${Font_color_suffix}  修改 TFO 配置
 ==================================
- ${Green_font_prefix}5.${Font_color_suffix}  Thay đổi toàn bộ cấu hình" && echo
-	read -e -p "(Mặc định: Hủy bỏ)：" modify
-	[[ -z "${modify}" ]] && echo "Đã hủy..." && exit 1
+ ${Green_font_prefix}5.${Font_color_suffix}  修改 全部配置" && echo
+	read -e -p "(默认：取消)：" modify
+	[[ -z "${modify}" ]] && echo "已取消..." && exit 1
 	if [[ "${modify}" == "1" ]]; then
 		Read_config
 		Set_port
@@ -420,37 +441,37 @@ Set(){
 		Write_config
 		Restart
 	else
-		echo -e "${Error} Vui lòng nhập số hợp lệ (1-5)" && exit 1
+		echo -e "${Error} 请输入正确的数字(1-5)" && exit 1
 	fi
 }
 
 Install(){
-	[[ -e ${FILE} ]] && echo -e "${Error} Phát hiện Shadowsocks Rust đã được cài đặt!" && exit 1
-	echo -e "${Info} Bắt đầu thiết lập cấu hình..."
+	[[ -e ${FILE} ]] && echo -e "${Error} 检测到 Shadowsocks Rust 已安装！" && exit 1
+	echo -e "${Info} 开始设置 配置..."
 	Set_port
 	Set_password
 	Set_cipher
 	Set_tfo
-	echo -e "${Info} Bắt đầu cài đặt các phụ thuộc..."
+	echo -e "${Info} 开始安装/配置 依赖..."
 	Installation_dependency
-	echo -e "${Info} Bắt đầu tải về và cài đặt..."
+	echo -e "${Info} 开始下载/安装..."
 	check_new_ver
 	Download
-	echo -e "${Info} Bắt đầu cài đặt dịch vụ hệ thống..."
+	echo -e "${Info} 开始安装系统服务脚本..."
 	Service
-	echo -e "${Info} Bắt đầu ghi file cấu hình..."
+	echo -e "${Info} 开始写入 配置文件..."
 	Write_config
-	echo -e "${Info} Tất cả bước đã hoàn tất, khởi động..."
+	echo -e "${Info} 所有步骤 安装完毕，开始启动..."
 	Start
 }
 
 Start(){
 	check_installed_status
 	check_status
-	[[ "$status" == "running" ]] && echo -e "${Info} Shadowsocks Rust đang chạy!" && exit 1
+	[[ "$status" == "running" ]] && echo -e "${Info} Shadowsocks Rust 已在运行 ！" && exit 1
 	systemctl start ss-rust
 	check_status
-	[[ "$status" == "running" ]] && echo -e "${Info} Shadowsocks Rust khởi động thành công!"
+	[[ "$status" == "running" ]] && echo -e "${Info} Shadowsocks Rust 启动成功 ！"
     sleep 3s
     Start_Menu
 }
@@ -458,7 +479,7 @@ Start(){
 Stop(){
 	check_installed_status
 	check_status
-	[[ !"$status" == "running" ]] && echo -e "${Error} Shadowsocks Rust không đang chạy, vui lòng kiểm tra!" && exit 1
+	[[ !"$status" == "running" ]] && echo -e "${Error} Shadowsocks Rust 没有运行，请检查！" && exit 1
 	systemctl stop ss-rust
     sleep 3s
     Start_Menu
@@ -467,7 +488,7 @@ Stop(){
 Restart(){
 	check_installed_status
 	systemctl restart ss-rust
-	echo -e "${Info} Shadowsocks Rust đã khởi động lại!"
+	echo -e "${Info} Shadowsocks Rust 重启完毕 ！"
 	sleep 3s
 	View
     Start_Menu
@@ -477,16 +498,16 @@ Update(){
 	check_installed_status
 	check_new_ver
 	check_ver_comparison
-	echo -e "${Info} Cập nhật Shadowsocks Rust hoàn tất!"
+	echo -e "${Info} Shadowsocks Rust 更新完毕！"
     sleep 3s
     Start_Menu
 }
 
 Uninstall(){
 	check_installed_status
-	echo "Bạn có chắc chắn muốn gỡ bỏ Shadowsocks Rust không? (y/N)"
+	echo "确定要卸载 Shadowsocks Rust ? (y/N)"
 	echo
-	read -e -p "(Mặc định: n)：" unyn
+	read -e -p "(默认：n)：" unyn
 	[[ -z ${unyn} ]] && unyn="n"
 	if [[ ${unyn} == [Yy] ]]; then
 		check_status
@@ -494,9 +515,9 @@ Uninstall(){
         systemctl disable ss-rust
 		rm -rf "${FOLDER}"
 		rm -rf "${FILE}"
-		echo && echo "Đã gỡ bỏ Shadowsocks Rust!" && echo
+		echo && echo "Shadowsocks Rust 卸载完成！" && echo
 	else
-		echo && echo "Đã hủy gỡ bỏ..." && echo
+		echo && echo "卸载已取消..." && echo
 	fi
     sleep 3s
     Start_Menu
@@ -531,13 +552,13 @@ Link_QR(){
 		SSbase64=$(urlsafe_base64 "${cipher}:${password}@${ipv4}:${port}")
 		SSurl="ss://${SSbase64}"
 		SSQRcode="https://cli.im/api/qrcode/code?text=${SSurl}"
-		link_ipv4=" Liên kết  [IPv4]：${Red_font_prefix}${SSurl}${Font_color_suffix} \n Mã QR [IPv4]：${Red_font_prefix}${SSQRcode}${Font_color_suffix}"
+		link_ipv4=" 链接  [IPv4]：${Red_font_prefix}${SSurl}${Font_color_suffix} \n 二维码[IPv4]：${Red_font_prefix}${SSQRcode}${Font_color_suffix}"
 	fi
 	if [[ "${ipv6}" != "IPv6_Error" ]]; then
 		SSbase64=$(urlsafe_base64 "${cipher}:${password}@${ipv6}:${port}")
 		SSurl="ss://${SSbase64}"
 		SSQRcode="https://cli.im/api/qrcode/code?text=${SSurl}"
-		link_ipv6=" Liên kết  [IPv6]：${Red_font_prefix}${SSurl}${Font_color_suffix} \n Mã QR [IPv6]：${Red_font_prefix}${SSQRcode}${Font_color_suffix}"
+		link_ipv6=" 链接  [IPv6]：${Red_font_prefix}${SSurl}${Font_color_suffix} \n 二维码[IPv6]：${Red_font_prefix}${SSQRcode}${Font_color_suffix}"
 	fi
 }
 
@@ -548,14 +569,14 @@ View(){
 	getipv6
 	Link_QR
 	clear && echo
-	echo -e "Cấu hình Shadowsocks Rust:"
+	echo -e "Shadowsocks Rust 配置："
 	echo -e "——————————————————————————————————"
-	[[ "${ipv4}" != "IPv4_Error" ]] && echo -e " Địa chỉ: ${Green_font_prefix}${ipv4}${Font_color_suffix}"
-	[[ "${ipv6}" != "IPv6_Error" ]] && echo -e " Địa chỉ: ${Green_font_prefix}${ipv6}${Font_color_suffix}"
-	echo -e " Cổng: ${Green_font_prefix}${port}${Font_color_suffix}"
-	echo -e " Mật khẩu: ${Green_font_prefix}${password}${Font_color_suffix}"
-	echo -e " Mã hóa: ${Green_font_prefix}${cipher}${Font_color_suffix}"
-	echo -e " TFO : ${Green_font_prefix}${tfo}${Font_color_suffix}"
+	[[ "${ipv4}" != "IPv4_Error" ]] && echo -e " 地址：${Green_font_prefix}${ipv4}${Font_color_suffix}"
+	[[ "${ipv6}" != "IPv6_Error" ]] && echo -e " 地址：${Green_font_prefix}${ipv6}${Font_color_suffix}"
+	echo -e " 端口：${Green_font_prefix}${port}${Font_color_suffix}"
+	echo -e " 密码：${Green_font_prefix}${password}${Font_color_suffix}"
+	echo -e " 加密：${Green_font_prefix}${cipher}${Font_color_suffix}"
+	echo -e " TFO ：${Green_font_prefix}${tfo}${Font_color_suffix}"
 	echo -e "——————————————————————————————————"
 	[[ ! -z "${link_ipv4}" ]] && echo -e "${link_ipv4}"
 	[[ ! -z "${link_ipv6}" ]] && echo -e "${link_ipv6}"
@@ -564,33 +585,33 @@ View(){
 }
 
 Status(){
-	echo -e "${Info} Đang lấy nhật ký hoạt động của Shadowsocks Rust ……"
-	echo -e "${Tip} Quay lại menu chính, nhấn phím q!"
+	echo -e "${Info} 获取 Shadowsocks Rust 活动日志 ……"
+	echo -e "${Tip} 返回主菜单请按 q ！"
 	systemctl status ss-rust
 	Start_Menu
 }
 
 Update_Shell(){
-	echo -e "Phiên bản hiện tại là [ ${sh_ver} ], bắt đầu kiểm tra phiên bản mới nhất..."
-	sh_new_ver=$(wget --no-check-certificate -qO- "https://raw.githubusercontent.com/xOS/Shadowsocks-Rust/master/ss-rust.sh"|grep 'sh_ver="'|awk -F "=" '{print $NF}'|sed 's/\"//g'|head -1)
-	[[ -z ${sh_new_ver} ]] && echo -e "${Error} Không lấy được phiên bản mới nhất!" && Start_Menu
+	echo -e "当前版本为 [ ${sh_ver} ]，开始检测最新版本..."
+	sh_new_ver=$(wget --no-check-certificate -qO- "https://raw.githubusercontent.com/harryngne/shadowsocks_rust/master/ss-rust.sh"|grep 'sh_ver="'|awk -F "=" '{print $NF}'|sed 's/\"//g'|head -1)
+	[[ -z ${sh_new_ver} ]] && echo -e "${Error} 检测最新版本失败 !" && Start_Menu
 	if [[ ${sh_new_ver} != ${sh_ver} ]]; then
-		echo -e "Đã phát hiện phiên bản mới [ ${sh_new_ver} ], có muốn cập nhật không? [Y/n]"
-		read -p "(Mặc định: y)：" yn
+		echo -e "发现新版本[ ${sh_new_ver} ]，是否更新？[Y/n]"
+		read -p "(默认：y)：" yn
 		[[ -z "${yn}" ]] && yn="y"
 		if [[ ${yn} == [Yy] ]]; then
-			wget -O ss-rust.sh --no-check-certificate https://raw.githubusercontent.com/xOS/Shadowsocks-Rust/master/ss-rust.sh && chmod +x ss-rust.sh
-			echo -e "Script đã được cập nhật lên phiên bản mới nhất [ ${sh_new_ver} ]!"
-			echo -e "Sẽ chạy script mới sau 3 giây"
+			wget -O ss-rust.sh --no-check-certificate https://raw.githubusercontent.com/harryngne/shadowsocks_rust/master/ss-rust.sh && chmod +x ss-rust.sh
+			echo -e "脚本已更新为最新版本[ ${sh_new_ver} ]！"
+			echo -e "3s后执行新脚本"
             sleep 3s
             bash ss-rust.sh
 		else
-			echo && echo "	Đã hủy bỏ..." && echo
+			echo && echo "	已取消..." && echo
             sleep 3s
             Start_Menu
 		fi
 	else
-		echo -e "Phiên bản hiện tại đã là phiên bản mới nhất [ ${sh_new_ver} ]!"
+		echo -e "当前已是最新版本[ ${sh_new_ver} ] ！"
 		sleep 3s
         Start_Menu
 	fi
@@ -599,7 +620,7 @@ Update_Shell(){
 }
 
 Before_Start_Menu() {
-    echo && echo -n -e "${yellow}* Nhấn Enter để quay lại menu chính *${plain}" && read temp
+    echo && echo -n -e "${yellow}* 按回车返回主菜单 *${plain}" && read temp
     Start_Menu
 }
 
@@ -611,36 +632,36 @@ sysArch
 action=$1
 	echo && echo -e "  
 ==================================
-Script quản lý Shadowsocks Rust ${Red_font_prefix}[v${sh_ver}]${Font_color_suffix}
+Shadowsocks Rust 管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_suffix}
 ==================================
- ${Green_font_prefix} 0.${Font_color_suffix} Cập nhật script
+ ${Green_font_prefix} 0.${Font_color_suffix} 更新脚本
 ——————————————————————————————————
- ${Green_font_prefix} 1.${Font_color_suffix} Cài đặt Shadowsocks Rust
- ${Green_font_prefix} 2.${Font_color_suffix} Cập nhật Shadowsocks Rust
- ${Green_font_prefix} 3.${Font_color_suffix} Gỡ cài đặt Shadowsocks Rust
+ ${Green_font_prefix} 1.${Font_color_suffix} 安装 Shadowsocks Rust
+ ${Green_font_prefix} 2.${Font_color_suffix} 更新 Shadowsocks Rust
+ ${Green_font_prefix} 3.${Font_color_suffix} 卸载 Shadowsocks Rust
 ——————————————————————————————————
- ${Green_font_prefix} 4.${Font_color_suffix} Khởi động Shadowsocks Rust
- ${Green_font_prefix} 5.${Font_color_suffix} Dừng Shadowsocks Rust
- ${Green_font_prefix} 6.${Font_color_suffix} Khởi động lại Shadowsocks Rust
+ ${Green_font_prefix} 4.${Font_color_suffix} 启动 Shadowsocks Rust
+ ${Green_font_prefix} 5.${Font_color_suffix} 停止 Shadowsocks Rust
+ ${Green_font_prefix} 6.${Font_color_suffix} 重启 Shadowsocks Rust
 ——————————————————————————————————
- ${Green_font_prefix} 7.${Font_color_suffix} Thiết lập cấu hình
- ${Green_font_prefix} 8.${Font_color_suffix} Xem cấu hình
- ${Green_font_prefix} 9.${Font_color_suffix} Xem trạng thái hoạt động
+ ${Green_font_prefix} 7.${Font_color_suffix} 设置 配置信息
+ ${Green_font_prefix} 8.${Font_color_suffix} 查看 配置信息
+ ${Green_font_prefix} 9.${Font_color_suffix} 查看 运行状态
 ——————————————————————————————————
- ${Green_font_prefix} 10.${Font_color_suffix} Thoát script
+ ${Green_font_prefix} 10.${Font_color_suffix} 退出脚本
 ==================================" && echo
 	if [[ -e ${FILE} ]]; then
 		check_status
 		if [[ "$status" == "running" ]]; then
-			echo -e " Trạng thái hiện tại: ${Green_font_prefix}Đã cài đặt${Font_color_suffix} và ${Green_font_prefix}Đang chạy${Font_color_suffix}"
+			echo -e " 当前状态：${Green_font_prefix}已安装${Font_color_suffix} 并 ${Green_font_prefix}已启动${Font_color_suffix}"
 		else
-			echo -e " Trạng thái hiện tại: ${Green_font_prefix}Đã cài đặt${Font_color_suffix} nhưng ${Red_font_prefix}Không chạy${Font_color_suffix}"
+			echo -e " 当前状态：${Green_font_prefix}已安装${Font_color_suffix} 但 ${Red_font_prefix}未启动${Font_color_suffix}"
 		fi
 	else
-		echo -e " Trạng thái hiện tại: ${Red_font_prefix}Chưa cài đặt${Font_color_suffix}"
+		echo -e " 当前状态：${Red_font_prefix}未安装${Font_color_suffix}"
 	fi
 	echo
-	read -e -p " Vui lòng nhập số [0-10]：" num
+	read -e -p " 请输入数字 [0-10]：" num
 	case "$num" in
 		0)
 		Update_Shell
@@ -676,7 +697,7 @@ Script quản lý Shadowsocks Rust ${Red_font_prefix}[v${sh_ver}]${Font_color_su
 		exit 1
 		;;
 		*)
-		echo "Vui lòng nhập số hợp lệ [0-10]"
+		echo "请输入正确数字 [0-10]"
 		;;
 	esac
 }
