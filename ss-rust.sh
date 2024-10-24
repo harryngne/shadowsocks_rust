@@ -307,23 +307,44 @@ ${Green_font_prefix} 1.${Font_color_suffix} Bật  ${Green_font_prefix} 2.${Font
 
 
 Set_password(){
-	# Kiểm tra loại mã hóa được chọn
-	if [[ ${cipher} == "aes-256-gcm" || ${cipher} == "2022-blake3-aes-256-gcm" ]]; then
-		password_length=32
-	elif [[ ${cipher} == "aes-128-gcm" || ${cipher} == "2022-blake3-aes-128-gcm" ]]; then
-		password_length=16
-	else
-		password_length=16  # Đặt mặc định là 16 cho các loại mã hóa khác
-	fi
+    # Kiểm tra loại mã hóa được chọn và đặt độ dài mật khẩu phù hợp
+    if [[ ${cipher} == "aes-256-gcm" || ${cipher} == "2022-blake3-aes-256-gcm" || ${cipher} == "2022-blake3-chacha20-poly1305" ]]; then
+        password_length=32
+    elif [[ ${cipher} == "aes-128-gcm" || ${cipher} == "2022-blake3-aes-128-gcm" || ${cipher} == "2022-blake3-chacha8-poly1305" ]]; then
+        password_length=16
+    else
+        password_length=16  # Đặt mặc định là 16 byte cho các loại mã hóa khác
+    fi
 
-	echo "Vui lòng nhập mật khẩu Shadowsocks Rust [0-9][a-z][A-Z]"
-	read -e -p "(Mặc định: Tạo ngẫu nhiên Base64)：" password
-	[[ -z "${password}" ]] && password=$(openssl rand -base64 ${password_length})
+    echo "Vui lòng nhập mật khẩu Shadowsocks Rust [0-9][a-z][A-Z] (Độ dài yêu cầu: ${password_length} ký tự)"
+    read -e -p "(Mặc định: Tạo ngẫu nhiên Base64 với độ dài ${password_length} byte): " password
 
-	echo && echo "=================================="
-	echo -e "Mật khẩu: ${Red_background_prefix} ${password} ${Font_color_suffix}"
-	echo "=================================="
+    # Kiểm tra nếu người dùng nhập mật khẩu
+    if [[ -n "${password}" ]]; then
+        # Nếu mật khẩu không đủ độ dài theo yêu cầu, yêu cầu nhập lại hoặc tự động tạo
+        if [[ ${#password} -lt ${password_length} ]]; then
+            echo "Mật khẩu của bạn không đủ ${password_length} ký tự, vui lòng nhập lại hoặc để trống để tạo tự động."
+            Set_password  # Yêu cầu nhập lại
+        fi
+
+        # Nếu chọn giao thức yêu cầu mật khẩu phải ở dạng Base64, mã hóa mật khẩu sang Base64 với độ dài phù hợp
+        if [[ ${cipher} == "2022-blake3-aes-256-gcm" ]]; then
+            password=$(openssl rand -base64 32)  # Mã hóa mật khẩu thành Base64 với 32 byte cho aes-256-gcm
+            echo "Mật khẩu của bạn đã được mã hóa thành Base64 với 32 byte cho giao thức ${cipher}."
+        elif [[ ${cipher} == "2022-blake3-aes-128-gcm" ]]; then
+            password=$(openssl rand -base64 16)  # Mã hóa mật khẩu thành Base64 với 16 byte cho aes-128-gcm
+            echo "Mật khẩu của bạn đã được mã hóa thành Base64 với 16 byte cho giao thức ${cipher}."
+        fi
+    else
+        # Nếu không nhập mật khẩu, tự tạo mật khẩu ngẫu nhiên với openssl
+        password=$(openssl rand -base64 ${password_length})
+    fi
+
+    echo && echo "=================================="
+    echo -e "Mật khẩu: ${Red_background_prefix} ${password} ${Font_color_suffix}"
+    echo "=================================="
 }
+
 
 Set_cipher(){
 	echo -e "Vui lòng chọn phương thức mã hóa cho Shadowsocks Rust
@@ -452,8 +473,8 @@ Install(){
 	[[ -e ${FILE} ]] && echo -e "${Error} Phát hiện Shadowsocks Rust đã được cài đặt!" && exit 1
 	echo -e "${Info} Bắt đầu thiết lập cấu hình..."
 	Set_port
-	Set_cipher
 	Set_password
+	Set_cipher
 	Set_tfo
 	echo -e "${Info} Bắt đầu cài đặt các phụ thuộc..."
 	Installation_dependency
