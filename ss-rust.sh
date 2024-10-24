@@ -11,10 +11,10 @@ export PATH
 sh_ver="1.4.4"
 filepath=$(cd "$(dirname "$0")"; pwd)
 file_1=$(echo -e "${filepath}"|awk -F "$0" '{print $1}')
-FOLDER="/etc/ss_rust"
-FILE="/usr/local/bin/ss_rust"
-CONF="/etc/ss_rust/config.json"
-Now_ver_File="/etc/ss_rust/ver.txt"
+FOLDER="/etc/ss-rust"
+FILE="/usr/local/bin/ss-rust"
+CONF="/etc/ss-rust/config.json"
+Now_ver_File="/etc/ss-rust/ver.txt"
 Local="/etc/sysctl.d/local.conf"
 
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m" && Yellow_font_prefix="\033[0;33m"
@@ -95,7 +95,7 @@ check_installed_status(){
 }
 
 check_status(){
-	status=`systemctl status ss_rust | grep Active | awk '{print $3}' | cut -d "(" -f2 | cut -d ")" -f1`
+	status=`systemctl status ss-rust | grep Active | awk '{print $3}' | cut -d "(" -f2 | cut -d ")" -f1`
 }
 
 check_new_ver(){
@@ -112,7 +112,7 @@ check_ver_comparison(){
 		[[ -z "${yn}" ]] && yn="y"
 		if [[ $yn == [Yy] ]]; then
 			check_status
-			# [[ "$status" == "running" ]] && systemctl stop ss_rust
+			# [[ "$status" == "running" ]] && systemctl stop ss-rust
 			\cp "${CONF}" "/tmp/config.json"
 			# rm -rf ${FOLDER}
 			Download
@@ -222,10 +222,10 @@ Restart=on-failure
 RestartSec=5s
 DynamicUser=true
 ExecStartPre=/bin/sh -c 'ulimit -n 51200'
-ExecStart=/usr/local/bin/ss_rust -c /etc/ss_rust/config.json
+ExecStart=/usr/local/bin/ss-rust -c /etc/ss-rust/config.json
 [Install]
-WantedBy=multi-user.target' > /etc/systemd/system/ss_rust.service
-systemctl enable --now ss_rust
+WantedBy=multi-user.target' > /etc/systemd/system/ss-rust.service
+systemctl enable --now ss-rust
 	echo -e "${Info} Shadowsocks Rust dịch vụ đã được cấu hình xong!"
 }
 
@@ -472,7 +472,7 @@ Start(){
 	check_installed_status
 	check_status
 	[[ "$status" == "running" ]] && echo -e "${Info} Shadowsocks Rust đang chạy!" && exit 1
-	systemctl start ss_rust
+	systemctl start ss-rust
 	check_status
 	[[ "$status" == "running" ]] && echo -e "${Info} Shadowsocks Rust đã khởi động thành công!"
     sleep 3s
@@ -483,14 +483,14 @@ Stop(){
 	check_installed_status
 	check_status
 	[[ !"$status" == "running" ]] && echo -e "${Error} Shadowsocks Rust không đang chạy, vui lòng kiểm tra!" && exit 1
-	systemctl stop ss_rust
+	systemctl stop ss-rust
     sleep 3s
     Start_Menu
 }
 
 Restart(){
 	check_installed_status
-	systemctl restart ss_rust
+	systemctl restart ss-rust
 	echo -e "${Info} Shadowsocks Rust đã khởi động lại!"
 	sleep 3s
 	View
@@ -514,8 +514,8 @@ Uninstall(){
 	[[ -z ${unyn} ]] && unyn="n"
 	if [[ ${unyn} == [Yy] ]]; then
 		check_status
-		[[ "$status" == "running" ]] && systemctl stop ss_rust
-        systemctl disable ss_rust
+		[[ "$status" == "running" ]] && systemctl stop ss-rust
+        systemctl disable ss-rust
 		rm -rf "${FOLDER}"
 		rm -rf "${FILE}"
 		echo && echo "Đã gỡ bỏ Shadowsocks Rust!" && echo
@@ -591,25 +591,25 @@ View(){
 Status(){
 	echo -e "${Info} Đang lấy nhật ký hoạt động của Shadowsocks Rust ……"
 	echo -e "${Tip} Quay lại menu chính, nhấn phím q!"
-	systemctl status ss_rust
+	systemctl status ss-rust
 	Start_Menu
 }
 
 
 Update_Shell(){
 	echo -e "Phiên bản hiện tại là [ ${sh_ver} ], bắt đầu kiểm tra phiên bản mới nhất..."
-	sh_new_ver=$(wget --no-check-certificate -qO- "https://raw.githubusercontent.com/harryngne/shadowsocks_rust/master/ss_rust.sh" | grep 'sh_ver="' | awk -F "=" '{print $NF}' | sed 's/\"//g' | head -1)
+	sh_new_ver=$(wget --no-check-certificate -qO- "https://raw.githubusercontent.com/harryngne/shadowsocks_rust/master/ss-rust.sh" | grep 'sh_ver="' | awk -F "=" '{print $NF}' | sed 's/\"//g' | head -1)
 	[[ -z ${sh_new_ver} ]] && echo -e "${Error} Không thể kiểm tra phiên bản mới nhất!" && Start_Menu
 	if [[ ${sh_new_ver} != ${sh_ver} ]]; then
 		echo -e "Đã phát hiện phiên bản mới [ ${sh_new_ver} ], có muốn cập nhật không? [Y/n]"
 		read -p "(Mặc định: y)：" yn
 		[[ -z "${yn}" ]] && yn="y"
 		if [[ ${yn} == [Yy] ]]; then
-			wget -O ss_rust.sh --no-check-certificate https://raw.githubusercontent.com/harryngne/shadowsocks_rust/master/ss_rust.sh && chmod +x ss_rust.sh
+			wget -O ss-rust.sh --no-check-certificate https://raw.githubusercontent.com/harryngne/shadowsocks_rust/master/ss-rust.sh && chmod +x ss-rust.sh
 			echo -e "Script đã được cập nhật lên phiên bản mới nhất [ ${sh_new_ver} ]!"
 			echo -e "Sẽ thực thi script mới sau 3 giây"
             sleep 3s
-            bash ss_rust.sh
+            bash ss-rust.sh
 		else
 			echo && echo "	Đã hủy..." && echo
             sleep 3s
@@ -621,7 +621,7 @@ Update_Shell(){
         Start_Menu
 	fi
 	sleep 3s
-    	bash ss_rust.sh
+    	bash ss-rust.sh
 }
 
 
