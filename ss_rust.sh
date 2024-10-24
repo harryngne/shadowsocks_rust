@@ -4,9 +4,8 @@ export PATH
 
 #=================================================
 #	System Required: CentOS/Debian/Ubuntu
-#	Description: Shadowsocks Rust 管理脚本
-#	Author: 翠花
-#	WebSite: https://about.nange.cn
+#	Description: Shadowsocks Rust
+#	Author: harryng
 #=================================================
 
 sh_ver="1.4.4"
