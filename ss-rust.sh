@@ -452,8 +452,8 @@ Install(){
 	[[ -e ${FILE} ]] && echo -e "${Error} Phát hiện Shadowsocks Rust đã được cài đặt!" && exit 1
 	echo -e "${Info} Bắt đầu thiết lập cấu hình..."
 	Set_port
-	Set_password
 	Set_cipher
+	Set_password
 	Set_tfo
 	echo -e "${Info} Bắt đầu cài đặt các phụ thuộc..."
 	Installation_dependency
